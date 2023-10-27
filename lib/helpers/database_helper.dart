@@ -39,10 +39,10 @@ class DatabaseHelper {
 
   Future _onCreate(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE $_tableName (
-        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
-        $columnDescripcion TEXT NOT NULL,
-      )
+    CREATE TABLE $_tableName (
+    $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+    $columnDescripcion TEXT NOT NULL
+    )
     ''');
 
     await db.execute('''
