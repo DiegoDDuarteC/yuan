@@ -17,6 +17,21 @@ class _ReservaScreenState extends State<ReservaScreen> {
   Persona? selectedDoctor;
   Persona? selectedPaciente;
   Categoria? selectedCategoria;
+  String? selectedHora;
+  final List<String> horarios = [
+    '09:00 - 10:00',
+    '10:00 - 11:00',
+    '11:00 - 12:00',
+    '12:00 - 13:00',
+    '13:00 - 14:00',
+    '14:00 - 15:00',
+    '15:00 - 16:00',
+    '16:00 - 17:00',
+    '17:00 - 18:00',
+    '18:00 - 19:00',
+    '19:00 - 20:00',
+    '20:00 - 21:00',
+  ];
   final TextEditingController _controllerFecha = TextEditingController();
   final TextEditingController _controllerHora = TextEditingController();
 
@@ -51,6 +66,20 @@ class _ReservaScreenState extends State<ReservaScreen> {
     if (id != null) {
       await DatabaseHelper.instance.deleteReserva(id);
       _loadReservas(); // Recargar la lista de reservas
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2025),
+    );
+    if (picked != null && picked != DateTime.now()) {
+      setState(() {
+        _controllerFecha.text = "${picked.toLocal()}".split(' ')[0];
+      });
     }
   }
 
@@ -115,10 +144,25 @@ class _ReservaScreenState extends State<ReservaScreen> {
                 TextField(
                   controller: _controllerFecha,
                   decoration: InputDecoration(labelText: 'Fecha'),
+                  readOnly:
+                      true, // Hace que el campo de texto sea de solo lectura
+                  onTap: () => _selectDate(
+                      context), // Abre el selector de fecha al tocar
                 ),
-                TextField(
-                  controller: _controllerHora,
-                  decoration: InputDecoration(labelText: 'Hora'),
+                DropdownButton<String>(
+                  value: selectedHora,
+                  hint: Text("Seleccione un horario"),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedHora = newValue;
+                    });
+                  },
+                  items: horarios.map<DropdownMenuItem<String>>((String hora) {
+                    return DropdownMenuItem<String>(
+                      value: hora,
+                      child: Text(hora),
+                    );
+                  }).toList(),
                 ),
                 ElevatedButton(
                   onPressed: _addReserva,
@@ -134,8 +178,9 @@ class _ReservaScreenState extends State<ReservaScreen> {
                 final reserva = reservas[index];
                 return ListTile(
                     title: Text(
-                        '${reserva.doctor.nombre} - ${reserva.paciente.nombre}'),
-                    subtitle: Text('${reserva.fecha} - ${reserva.hora}'),
+                        'Dr. ${reserva.doctor.nombre} ${reserva.doctor.apellido} - ${reserva.paciente.nombre} ${reserva.paciente.apellido}'),
+                    subtitle: Text(
+                        '${reserva.fecha} - ${reserva.hora} - ${reserva.categoria}'),
                     trailing: IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () => _deleteReserva(reservas[index].id),
@@ -154,13 +199,13 @@ class _ReservaScreenState extends State<ReservaScreen> {
           selectedPaciente != null &&
           selectedCategoria != null &&
           _controllerFecha.text.isNotEmpty &&
-          _controllerHora.text.isNotEmpty) {
+          selectedHora != null) {
         Reserva newReserva = Reserva(
           //id: 0,
           doctor: selectedDoctor!,
           paciente: selectedPaciente!,
           fecha: _controllerFecha.text,
-          hora: _controllerHora.text,
+          hora: selectedHora!,
           categoria: selectedCategoria!.descripcion,
         );
         await DatabaseHelper.instance.insertReserva(newReserva);

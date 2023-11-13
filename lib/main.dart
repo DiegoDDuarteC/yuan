@@ -27,32 +27,53 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ElevatedButton(
-              child: Text('Administrar Categorías'),
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => CategoriaScreen(),
-                ));
-              },
+            SizedBox(
+              width: 200, // Ancho fijo para todos los botones
+              child: ElevatedButton(
+                child: Text('Administrar Categorías'),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => CategoriaScreen(),
+                  ));
+                },
+              ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              child: Text('Administrar Personas'),
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => PersonaScreen(),
-                ));
-              },
+            SizedBox(
+              width: 200, // Ancho fijo para todos los botones
+              child: ElevatedButton(
+                child: Text('Administrar Personas'),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => PersonaScreen(),
+                  ));
+                },
+              ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              child: Text('Reserva de turnos'),
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => ReservaScreen(),
-                ));
-              },
+            SizedBox(
+              width: 200, // Ancho fijo para todos los botones
+              child: ElevatedButton(
+                child: Text('Reserva de turnos'),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => ReservaScreen(),
+                  ));
+                },
+              ),
             ),
+            SizedBox(height: 20),
+            SizedBox(
+              width: 200, // Ancho fijo para todos los botones
+              child: ElevatedButton(
+                child: Text('Ficha Clínica'),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => ReservaScreen(),
+                  ));
+                },
+              ),
+            )
           ],
         ),
       ),
