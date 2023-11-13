@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yuan/screens/reservaturnos_screen.dart';
 import 'screens/categoria_screen.dart';
 import 'screens/persona_screen.dart';
 
@@ -40,6 +41,15 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) => PersonaScreen(),
+                ));
+              },
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              child: Text('Reserva de turnos'),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => ReservaScreen(),
                 ));
               },
             ),

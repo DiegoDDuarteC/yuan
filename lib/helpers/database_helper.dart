@@ -2,6 +2,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/categoria.dart';
 import '../models/persona.dart';
+import '../models/reserva.dart';
 
 class DatabaseHelper {
   static final _dbName = 'fichasClinicas.db';
@@ -20,6 +21,14 @@ class DatabaseHelper {
   static final columnEmail = 'email';
   static final columnCedula = 'cedula';
   static final columnFlagEsDoctor = 'flagEsDoctor';
+
+  static final _tableReserva = 'reservas'; // Nombre de la tabla de reservas
+  static final columnIdReserva = 'id';
+  static final columnDoctor = 'doctor';
+  static final columnPaciente = 'paciente';
+  static final columnFecha = 'fecha';
+  static final columnHora = 'hora';
+  static final columnCategoriaReserva = 'categoria';
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();
@@ -54,6 +63,19 @@ class DatabaseHelper {
         $columnEmail TEXT,
         $columnCedula TEXT NOT NULL,
         $columnFlagEsDoctor INTEGER NOT NULL
+      )
+    ''');
+    // Crear la tabla de reservas
+    await db.execute('''
+      CREATE TABLE $_tableReserva (
+        $columnIdReserva INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnDoctor INTEGER NOT NULL,
+        $columnPaciente INTEGER NOT NULL,
+        $columnFecha TEXT NOT NULL,
+        $columnHora TEXT NOT NULL,
+        $columnCategoriaReserva TEXT NOT NULL,
+        FOREIGN KEY ($columnDoctor) REFERENCES $_tablePersona($columnIdPersona),
+        FOREIGN KEY ($columnPaciente) REFERENCES $_tablePersona($columnIdPersona)
       )
     ''');
   }
@@ -109,5 +131,67 @@ class DatabaseHelper {
     Database db = await database;
     return await db
         .delete(_tablePersona, where: '$columnIdPersona = ?', whereArgs: [id]);
+  }
+
+  // Métodos para manejar reservas
+  Future<int> insertReserva(Reserva reserva) async {
+    Database db = await database;
+    var map = reserva.toMap();
+    map['doctor'] = reserva.doctor
+        .idPersona; // Asegúrate de que estos campos coincidan con los nombres de las columnas en la base de datos
+    map['paciente'] = reserva.paciente.idPersona;
+    return await db.insert(_tableReserva, map);
+  }
+
+  Future<Persona> obtenerPersonaPorId(int id) async {
+    Database db = await database;
+    final res = await db.query(
+      _tablePersona,
+      where: '$columnIdPersona = ?',
+      whereArgs: [id],
+    );
+
+    if (res.isNotEmpty) {
+      return Persona.fromMap(res.first);
+    } else {
+      throw Exception('Persona no encontrada');
+    }
+  }
+
+  Future<List<Reserva>> queryAllReservas() async {
+    Database db = await database;
+    final res = await db.query(_tableReserva);
+    List<Reserva> listaReservas = [];
+
+    for (var reservaMap in res) {
+      Persona doctor = await obtenerPersonaPorId(reservaMap['doctor'] as int);
+      Persona paciente =
+          await obtenerPersonaPorId(reservaMap['paciente'] as int);
+
+      Reserva reserva = Reserva(
+        id: reservaMap['id'] as int,
+        doctor: doctor,
+        paciente: paciente,
+        fecha: reservaMap['fecha'] as String,
+        hora: reservaMap['hora'] as String,
+        categoria: reservaMap['categoria'] as String,
+      );
+
+      listaReservas.add(reserva);
+    }
+
+    return listaReservas;
+  }
+
+  Future<int> updateReserva(Reserva reserva) async {
+    Database db = await database;
+    return await db.update(_tableReserva, reserva.toMap(),
+        where: '$columnIdReserva = ?', whereArgs: [reserva.id]);
+  }
+
+  Future<int> deleteReserva(int id) async {
+    Database db = await database;
+    return await db
+        .delete(_tableReserva, where: '$columnIdReserva = ?', whereArgs: [id]);
   }
 }
