@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/categoria.dart';
+import '../models/fichaclinica.dart';
 import '../models/persona.dart';
 import '../models/reserva.dart';
 
@@ -30,6 +31,15 @@ class DatabaseHelper {
   static final columnHora = 'hora';
   static final columnCategoriaReserva = 'categoria';
 
+  // Definiciones para la tabla de fichas clínicas
+  static final _tableFichaClinica = 'fichasClinicas';
+  static final columnIdFicha = 'id';
+  static final columnDoctorFicha = 'doctor';
+  static final columnPacienteFicha = 'paciente';
+  static final columnFechaFicha = 'fecha';
+  static final columnMotivoConsultaFicha = 'motivoConsulta';
+  static final columnDiagnosticoFicha = 'diagnostico';
+  static final columnCategoriaFicha = 'categoria';
   // Singleton pattern
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -78,6 +88,21 @@ class DatabaseHelper {
         FOREIGN KEY ($columnPaciente) REFERENCES $_tablePersona($columnIdPersona)
       )
     ''');
+
+    await db.execute('''
+    CREATE TABLE $_tableFichaClinica (
+      $columnIdFicha INTEGER PRIMARY KEY AUTOINCREMENT,
+      $columnDoctorFicha INTEGER NOT NULL,
+      $columnPacienteFicha INTEGER NOT NULL,
+      $columnFechaFicha TEXT NOT NULL,
+      $columnMotivoConsultaFicha TEXT NOT NULL,
+      $columnDiagnosticoFicha TEXT NOT NULL,
+      $columnCategoriaFicha INTEGER NOT NULL,
+      FOREIGN KEY ($columnDoctorFicha) REFERENCES $_tablePersona($columnIdPersona),
+      FOREIGN KEY ($columnPacienteFicha) REFERENCES $_tablePersona($columnIdPersona),
+      FOREIGN KEY ($columnCategoriaFicha) REFERENCES $_tableName($columnId)
+    )
+  ''');
   }
 
   Future<int> insert(Categoria categoria) async {
@@ -193,5 +218,56 @@ class DatabaseHelper {
     Database db = await database;
     return await db
         .delete(_tableReserva, where: '$columnIdReserva = ?', whereArgs: [id]);
+  }
+
+  Future<List<FichaClinica>> queryAllFichasClinicas() async {
+    Database db = await database;
+    final res = await db.query(
+        _tableFichaClinica); // Asegúrate de que _tableFichaClinica es el nombre correcto de tu tabla
+    List<FichaClinica> listaFichas = [];
+
+    for (var fichaMap in res) {
+      Persona doctor =
+          await obtenerPersonaPorId(fichaMap[columnDoctorFicha] as int);
+      Persona paciente =
+          await obtenerPersonaPorId(fichaMap[columnPacienteFicha] as int);
+      Categoria categoria =
+          await obtenerCategoriaPorId(fichaMap[columnCategoriaFicha] as int);
+
+      FichaClinica ficha = FichaClinica.fromMap(fichaMap,
+          doctor: doctor, paciente: paciente, categoria: categoria);
+      listaFichas.add(ficha);
+    }
+
+    return listaFichas;
+  }
+
+  Future<Categoria> obtenerCategoriaPorId(int id) async {
+    Database db = await database;
+    final res = await db.query(
+      _tableName,
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+
+    if (res.isNotEmpty) {
+      return Categoria.fromMap(res.first);
+    } else {
+      throw Exception('Categoría no encontrada');
+    }
+  }
+
+  Future<int> insertFichaClinica(FichaClinica ficha) async {
+    Database db = await database;
+    var map = {
+      'doctor': ficha.doctor.idPersona,
+      'paciente': ficha.paciente.idPersona,
+      'fecha': ficha.fecha,
+      'motivoConsulta': ficha.motivoConsulta,
+      'diagnostico': ficha.diagnostico,
+      'categoria': ficha.categoria.idCategoria,
+    };
+    return await db.insert(_tableFichaClinica,
+        map); // Cambiado de 'FichaClinica' a '_tableFichaClinica'
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:yuan/models/fichaclinica.dart';
+import 'package:yuan/screens/fichaclinica_screen.dart';
 import 'package:yuan/screens/reservaturnos_screen.dart';
 import 'screens/categoria_screen.dart';
 import 'screens/persona_screen.dart';
@@ -69,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                 child: Text('Ficha Clínica'),
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ReservaScreen(),
+                    builder: (context) => FichaClinicaScreen(),
                   ));
                 },
               ),
