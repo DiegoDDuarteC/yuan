@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../helpers/database_helper.dart';
 import '../models/fichaclinica.dart';
 import '../models/persona.dart';
 import '../models/reserva.dart';
 import '../models/categoria.dart';
+import 'dart:io';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:excel/excel.dart';
+import 'package:path_provider/path_provider.dart';
 
 class FichaClinicaScreen extends StatefulWidget {
   final Reserva? reserva; // Opcional, para preseleccionar datos de una reserva
@@ -97,6 +103,77 @@ class _FichaClinicaScreenState extends State<FichaClinicaScreen> {
     setState(() {});
   }
 
+  void _exportFichasToPdf() async {
+    final pdf = pw.Document();
+
+    // Carga la fuente
+    final fontData = await rootBundle.load("assets/fonts/OpenSans-Regular.ttf");
+    final ttf = pw.Font.ttf(fontData.buffer.asByteData());
+
+    pdf.addPage(
+      pw.MultiPage(
+        theme: pw.ThemeData.withFont(
+          base: ttf,
+          bold: ttf,
+          italic: ttf,
+          boldItalic: ttf,
+        ),
+        build: (context) => [
+          pw.Table.fromTextArray(
+            context: context,
+            data: <List<String>>[
+              [
+                'Paciente',
+                'Doctor',
+                'Fecha',
+                'Motivo',
+                'Diagnóstico',
+                'Categoría'
+              ],
+              ...fichasFiltradas.map((ficha) => [
+                    '${ficha.paciente.nombre} ${ficha.paciente.apellido}',
+                    '${ficha.doctor.nombre} ${ficha.doctor.apellido}',
+                    ficha.fecha,
+                    ficha.motivoConsulta,
+                    ficha.diagnostico,
+                    ficha.categoria.descripcion,
+                  ]),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final output = await _localPath;
+    final file = File("$output/fichas_clinicas.pdf");
+    await file.writeAsBytes(await pdf.save());
+  }
+
+  void _exportFichasToExcel() async {
+    final excel = Excel.createExcel();
+    final sheet = excel['Sheet1'];
+
+    sheet.appendRow(
+        ['Paciente', 'Doctor', 'Fecha', 'Motivo', 'Diagnóstico', 'Categoría']);
+
+    for (var ficha in fichasFiltradas) {
+      sheet.appendRow([
+        '${ficha.paciente.nombre} ${ficha.paciente.apellido}',
+        '${ficha.doctor.nombre} ${ficha.doctor.apellido}',
+        ficha.fecha,
+        ficha.motivoConsulta,
+        ficha.diagnostico,
+        ficha.categoria.descripcion,
+      ]);
+    }
+
+    final output = await _localPath;
+    final file = File("$output/fichas_clinicas.xlsx");
+
+    final bytes = excel.encode();
+    await file.writeAsBytes(bytes!);
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -109,6 +186,11 @@ class _FichaClinicaScreenState extends State<FichaClinicaScreen> {
         _controllerFecha.text = "${picked.toLocal()}".split(' ')[0];
       });
     }
+  }
+
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
   }
 
   @override
@@ -257,6 +339,15 @@ class _FichaClinicaScreenState extends State<FichaClinicaScreen> {
                 ),
                 onChanged: (value) => _filtrarFichas(),
               ),
+            ),
+            ElevatedButton(
+              onPressed:
+                  _exportFichasToPdf, // Asegúrate de que esta función esté definida en tu clase
+              child: Text('Exportar a PDF'),
+            ),
+            ElevatedButton(
+              onPressed: _exportFichasToExcel,
+              child: Text('Exportar a Excel'),
             ),
           ],
         ),
